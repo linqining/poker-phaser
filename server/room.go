@@ -2,6 +2,7 @@ package poker
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -34,13 +35,17 @@ type Room struct {
 	EndChan   chan int `json:"-"`
 	exitChan  chan interface{}
 	lock      sync.Mutex
-	deck      *Deck
+	deck      *DeckMasked
 }
 
 func NewRoom(id string, max int, sb, bb int) *Room {
 	if max <= 0 || max > MaxN {
 		max = 9 // default 9 occupants
 	}
+	//deck, err := NewDeckMasked()
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	room := &Room{
 		Id:        id,
@@ -52,9 +57,9 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 		Timeout:   30,
 		Max:       max,
 		lock:      sync.Mutex{},
-		deck:      NewDeck(),
-		EndChan:   make(chan int),
-		exitChan:  make(chan interface{}, 1),
+		//deck:      NewDeck(),
+		EndChan:  make(chan int),
+		exitChan: make(chan interface{}, 1),
 	}
 	go func() {
 		timer := time.NewTimer(time.Second * 6)
@@ -194,8 +199,14 @@ func (room *Room) start() {
 		room.lock.Unlock()
 		return
 	}
+	var err error
+	room.deck, err = NewDeckMasked()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-	room.deck.Shuffle()
+	//room.deck.Shuffle()
 
 	// Small Blind
 	sb := dealer.Next()

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ginuerzh/poker/server"
+	"github.com/linqining/poker-phaser"
 )
 
 var (

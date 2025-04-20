@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/linqining/poker-phaser"
 	"log"
 	"math/rand"
 	"net"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ginuerzh/poker/server"
 	"github.com/gorilla/websocket"
 )
 

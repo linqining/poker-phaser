@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ginuerzh/poker"
+	"github.com/linqining/poker-phaser"
 )
 
 func init() {

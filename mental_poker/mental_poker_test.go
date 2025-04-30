@@ -36,11 +36,13 @@ func TestGenerate(t *testing.T) {
 		}
 		player.SetJoinedKey(aggResp.JoinedKey)
 	}
-
-	// each player maskcard
-	for _, player := range players {
-		player.Mask()
-	}
+	maskResp, err := players[0].Mask()
+	t.Log(maskResp)
+	t.Log(err)
+	//// each player maskcard
+	//for _, player := range players {
+	//	player.Mask()
+	//}
 
 }
 

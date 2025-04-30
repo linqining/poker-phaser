@@ -165,17 +165,29 @@ func (p *Player) ComputeAggregatekey(players []*AggPlayer) (*ComputeAggKeyResp, 
 	return aggResponse, nil
 }
 
-func (p *Player) Mask() (*ComputeAggKeyResp, error) {
+type MaskResponse struct {
+	Cards []struct {
+		MaskedCard string `json:"masked_card"`
+		Proof      struct {
+			A string `json:"a"`
+			B string `json:"b"`
+			R string `json:"r"`
+		} `json:"proof"`
+	} `json:"cards"`
+}
+
+func (p *Player) Mask() (*MaskResponse, error) {
 	cards := slice.Map(p.Cards, func(idx int, src InitialCard) string {
 		return src.Card
 	})
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
-		"seed_hex": p.SeedHex,
-		"cards":    cards,
+		"seed_hex":   p.SeedHex,
+		"cards":      cards,
+		"joined_key": p.JoinedKey,
 	}
-	resp, err := req.Post(computeAggUrl)
+	resp, err := req.Post(maskUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -183,10 +195,10 @@ func (p *Player) Mask() (*ComputeAggKeyResp, error) {
 	if err != nil {
 		return nil, err
 	}
-	aggResponse := new(ComputeAggKeyResp)
-	err = json.Unmarshal(data, aggResponse)
+	maskResp := new(MaskResponse)
+	err = json.Unmarshal(data, maskResp)
 	if err != nil {
 		return nil, err
 	}
-	return aggResponse, nil
+	return maskResp, nil
 }

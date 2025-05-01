@@ -9,7 +9,8 @@ func TestGenerate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(initialDeck)
+	game := Game{InitialCards: initialDeck.Cards, SeedHex: initialDeck.SeedHex}
+	//t.Log(initialDeck)
 
 	gameID := "game123"
 	andrija := NewPlayer()
@@ -65,6 +66,24 @@ func TestGenerate(t *testing.T) {
 		finalProof = shuffleResp.ShuffleProof
 	}
 	t.Log("shuffle complete", finalProof, finalCards)
+	game.ShuffleCards = finalCards
+	for i := 0; i < 4; i++ {
+		card := finalCards[i]
+		player := players[i]
+		tokens := []string{}
+		for _, p := range players {
+			//if p.GameUserID != p.GameUserID {
+			resp, err := p.ComputeRevealToken(card)
+			if err != nil {
+				t.Fatal(err)
+			}
+			val := resp.TokenMap[card]
+			tokens = append(tokens, val.Token)
+
+			//}
+		}
+		player.ReceiveCard(card, tokens)
+	}
 	//shuffledCards := shuffleResp.Cards
 
 	//// each player maskcard

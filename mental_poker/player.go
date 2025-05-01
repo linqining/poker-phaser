@@ -23,6 +23,7 @@ type Player struct {
 	JoinedKey    string
 	SeedHex      string
 	Cards        []InitialCard
+	ReceiveCards []ReceiveCard
 }
 
 func (p *Player) ToAggPlayer() *AggPlayer {
@@ -42,6 +43,7 @@ const (
 	maskUrl          = baseUrl + "/deck/mask"
 	shuffleUrl       = baseUrl + "/deck/shuffle"
 	verifyShuffleUrl = baseUrl + "/deck/verify_shuffle"
+	revelTokenUrl    = baseUrl + "/deck/reveal_token"
 )
 
 type ClassicCard struct {
@@ -98,6 +100,7 @@ type SetUpResponse struct {
 func (p *Player) Setup(gameID string, gameUserID string, initialDeck *InitializeDeckResp) (*SetUpResponse, error) {
 	p.SeedHex = initialDeck.SeedHex
 	p.Cards = initialDeck.Cards
+	p.GameUserID = gameUserID // 某一局游戏的gameID
 
 	c := new(http.Client)
 	req := request.NewRequest(c)
@@ -263,4 +266,45 @@ func (p *Player) VerifyShuffle(originCards []string, shuffledCards []string, shu
 		return nil, err
 	}
 	return shuffleResp, nil
+}
+
+type RevealTokenAndProof struct {
+	Token string `json:"token"`
+	Proof string `json:"proof"`
+}
+
+type RevealTokenResponse struct {
+	TokenMap map[string]RevealTokenAndProof `json:"token_map"`
+}
+
+func (p *Player) ComputeRevealToken(card string) (*RevealTokenResponse, error) {
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Json = map[string]interface{}{
+		"game_user_id": p.GameUserID,
+		"seed_hex":     p.SeedHex,
+		"reveal_cards": []string{card},
+	}
+	resp, err := req.Post(revelTokenUrl)
+	if err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("RevealTokenResponse", string(data))
+	shuffleResp := new(RevealTokenResponse)
+	err = json.Unmarshal(data, shuffleResp)
+	if err != nil {
+		return nil, err
+	}
+	return shuffleResp, nil
+}
+
+func (p *Player) ReceiveCard(card string, tokens []string) {
+	p.ReceiveCards = append(p.ReceiveCards, ReceiveCard{
+		Card:        card,
+		RevealToken: tokens,
+	})
 }

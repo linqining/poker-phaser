@@ -35,11 +35,13 @@ func (p *Player) ToAggPlayer() *AggPlayer {
 }
 
 const (
-	baseUrl       = "http://127.0.0.1:8000"
-	setUpUrl      = baseUrl + "/deck/setup"
-	initialUrl    = baseUrl + "/deck/initialize"
-	computeAggUrl = baseUrl + "/deck/compute_aggregate_key"
-	maskUrl       = baseUrl + "/deck/mask"
+	baseUrl          = "http://127.0.0.1:8000"
+	setUpUrl         = baseUrl + "/deck/setup"
+	initialUrl       = baseUrl + "/deck/initialize"
+	computeAggUrl    = baseUrl + "/deck/compute_aggregate_key"
+	maskUrl          = baseUrl + "/deck/mask"
+	shuffleUrl       = baseUrl + "/deck/shuffle"
+	verifyShuffleUrl = baseUrl + "/deck/verify_shuffle"
 )
 
 type ClassicCard struct {
@@ -201,4 +203,64 @@ func (p *Player) Mask() (*MaskResponse, error) {
 		return nil, err
 	}
 	return maskResp, nil
+}
+
+type ShuffleResponse struct {
+	Cards        []string `json:"cards"`
+	ShuffleProof string   `json:"shuffle_proof"`
+}
+
+func (p *Player) Shuffle(cards []string) (*ShuffleResponse, error) {
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Json = map[string]interface{}{
+		"seed_hex":   p.SeedHex,
+		"cards":      cards,
+		"joined_key": p.JoinedKey,
+	}
+	resp, err := req.Post(shuffleUrl)
+	if err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("ShuffleResponse", string(data))
+	shuffleResp := new(ShuffleResponse)
+	err = json.Unmarshal(data, shuffleResp)
+	if err != nil {
+		return nil, err
+	}
+	return shuffleResp, nil
+}
+
+type VerifyShuffleResponse struct {
+}
+
+func (p *Player) VerifyShuffle(originCards []string, shuffledCards []string, shuffleProof string) (*VerifyShuffleResponse, error) {
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Json = map[string]interface{}{
+		"proof":          shuffleProof,
+		"joined_key":     p.JoinedKey,
+		"seed_hex":       p.SeedHex,
+		"origin_cards":   originCards,
+		"shuffled_cards": shuffledCards,
+	}
+	resp, err := req.Post(verifyShuffleUrl)
+	if err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("VerifyShuffleResponse", string(data))
+	shuffleResp := new(VerifyShuffleResponse)
+	err = json.Unmarshal(data, shuffleResp)
+	if err != nil {
+		return nil, err
+	}
+	return shuffleResp, nil
 }

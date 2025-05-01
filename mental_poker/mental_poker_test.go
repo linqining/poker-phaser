@@ -39,6 +39,34 @@ func TestGenerate(t *testing.T) {
 	maskResp, err := players[0].Mask()
 	t.Log(maskResp)
 	t.Log(err)
+	cards := []string{}
+	for _, card := range maskResp.Cards {
+		cards = append(cards, card.MaskedCard)
+	}
+
+	originCards := cards
+	finalCards := []string{}
+	finalProof := ""
+	for _, player := range players {
+		shuffleResp, err := player.Shuffle(originCards)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log("shuffle complete orign ", originCards)
+		t.Log("shuffle complete shuffled", shuffleResp.Cards)
+		for _, p := range players {
+			_, verifyShuffleErr := p.VerifyShuffle(originCards, shuffleResp.Cards, shuffleResp.ShuffleProof)
+			if verifyShuffleErr != nil {
+				t.Fatal(verifyShuffleErr)
+			}
+		}
+		originCards = shuffleResp.Cards
+		finalCards = shuffleResp.Cards
+		finalProof = shuffleResp.ShuffleProof
+	}
+	t.Log("shuffle complete", finalProof, finalCards)
+	//shuffledCards := shuffleResp.Cards
+
 	//// each player maskcard
 	//for _, player := range players {
 	//	player.Mask()

@@ -44,6 +44,7 @@ const (
 	shuffleUrl       = baseUrl + "/deck/shuffle"
 	verifyShuffleUrl = baseUrl + "/deck/verify_shuffle"
 	revelTokenUrl    = baseUrl + "/deck/reveal_token"
+	peekCardsUrl     = baseUrl + "/deck/peek_cards"
 )
 
 type ClassicCard struct {
@@ -267,9 +268,16 @@ func (p *Player) VerifyShuffle(originCards []string, shuffledCards []string, shu
 	return shuffleResp, nil
 }
 
+type PedersenProof struct {
+	A string `json:"a"`
+	B string `json:"b"`
+	R string `json:"r"`
+}
+
 type RevealTokenAndProof struct {
-	Token string `json:"token"`
-	Proof string `json:"proof"`
+	Token         string        `json:"token"`
+	PedersenProof PedersenProof `json:"proof"`
+	PublicKey     string        `json:"public_key"`
 }
 
 type RevealTokenResponse struct {
@@ -301,9 +309,39 @@ func (p *Player) ComputeRevealToken(card string) (*RevealTokenResponse, error) {
 	return shuffleResp, nil
 }
 
-func (p *Player) ReceiveCard(card string, tokens []string) {
+type PeekCardsResponse struct {
+	CardMap map[string]string `json:"card_map"`
+}
+
+func (p *Player) PeekCards(receiveCard ReceiveCard) (*PeekCardsResponse, error) {
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Json = map[string]interface{}{
+		"game_user_id": p.GameUserID,
+		"seed_hex":     p.SeedHex,
+		"peek_cards":   []ReceiveCard{receiveCard},
+	}
+	resp, err := req.Post(peekCardsUrl)
+	if err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("PeekCardsResponse", string(data))
+	shuffleResp := new(PeekCardsResponse)
+	err = json.Unmarshal(data, shuffleResp)
+	if err != nil {
+		return nil, err
+	}
+	return shuffleResp, nil
+}
+
+func (p *Player) ReceiveCard(card string, tokens []RevealTokenAndProof) error {
 	p.ReceiveCards = append(p.ReceiveCards, ReceiveCard{
 		Card:        card,
 		RevealToken: tokens,
 	})
+	return nil
 }

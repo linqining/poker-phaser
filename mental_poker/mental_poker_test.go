@@ -72,16 +72,16 @@ func TestGenerate(t *testing.T) {
 		player := players[i]
 		tokens := []string{}
 		for _, p := range players {
-			//if p.GameUserID != p.GameUserID {
-			resp, err := p.ComputeRevealToken(card)
-			if err != nil {
-				t.Fatal(err)
+			if player.GameUserID != p.GameUserID {
+				resp, err := p.ComputeRevealToken(card)
+				if err != nil {
+					t.Fatal(err)
+				}
+				val := resp.TokenMap[card]
+				tokens = append(tokens, val.Token)
 			}
-			val := resp.TokenMap[card]
-			tokens = append(tokens, val.Token)
-
-			//}
 		}
+		t.Log("reveal token", tokens)
 		player.ReceiveCard(card, tokens)
 	}
 	//shuffledCards := shuffleResp.Cards

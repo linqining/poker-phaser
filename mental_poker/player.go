@@ -100,7 +100,6 @@ type SetUpResponse struct {
 func (p *Player) Setup(gameID string, gameUserID string, initialDeck *InitializeDeckResp) (*SetUpResponse, error) {
 	p.SeedHex = initialDeck.SeedHex
 	p.Cards = initialDeck.Cards
-	p.GameUserID = gameUserID // 某一局游戏的gameID
 
 	c := new(http.Client)
 	req := request.NewRequest(c)

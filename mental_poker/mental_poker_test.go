@@ -57,14 +57,12 @@ func TestGenerate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log("shuffle complete orign ", originCards)
-		t.Log("shuffle complete shuffled", shuffleResp.Cards)
-		//for _, p := range players {
-		//	_, verifyShuffleErr := p.VerifyShuffle(originCards, shuffleResp.Cards, shuffleResp.ShuffleProof)
-		//	if verifyShuffleErr != nil {
-		//		t.Fatal(verifyShuffleErr)
-		//	}
-		//}
+		for _, p := range players {
+			_, verifyShuffleErr := p.VerifyShuffle(originCards, shuffleResp.Cards, shuffleResp.ShuffleProof)
+			if verifyShuffleErr != nil {
+				t.Fatal(verifyShuffleErr)
+			}
+		}
 		originCards = shuffleResp.Cards
 		finalCards = shuffleResp.Cards
 		finalProof = shuffleResp.ShuffleProof

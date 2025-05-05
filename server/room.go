@@ -54,7 +54,7 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 		SB:        sb,
 		BB:        bb,
 		Pot:       make([]int, 1),
-		Timeout:   30,
+		Timeout:   10,
 		Max:       max,
 		lock:      sync.Mutex{},
 		//deck:      NewDeck(),
@@ -573,10 +573,37 @@ func GetRoom(id string) *Room {
 				return v
 			}
 		}
-		room = NewRoom("", 9, 5, 10)
+		room = NewRoom(id, 9, 5, 10)
 		setRoom(room)
 	}
 
+	return room
+}
+
+func GetOrCreateRoom(id string) *Room {
+	if room := GetRoom(id); room != nil {
+		return room
+	}
+	room := NewRoom(id, 9, 5, 10)
+
+	//if message.Room != nil {
+	//	if message.Room.SB > 0 {
+	//		room.SB = message.Room.SB
+	//	}
+	//	if message.Room.BB > 0 {
+	//		room.BB = message.Room.BB
+	//	}
+	//	if message.Room.Timeout > 0 {
+	//		room.Timeout = message.Room.Timeout
+	//	}
+	//
+	//	if message.Room.Max > 0 && message.Room.Max <= MaxN {
+	//		room.Max = message.Room.Max
+	//		room.Occupants = room.Occupants[:room.Max]
+	//		room.Chips = room.Chips[:room.Max]
+	//	}
+	//}
+	SetRoom(room)
 	return room
 }
 

@@ -170,6 +170,41 @@ func (o *Occupant) Join(rid string) (room *Room) {
 	return
 }
 
+func (o *Occupant) JoinRoom(room *Room) {
+	existOccupant := room.Occupant(o.Id)
+	if existOccupant != nil {
+		o.SendMessage(&Message{
+			From:   room.Id,
+			Type:   MsgPresence,
+			Action: ActState,
+			Room:   room,
+		})
+		return
+	}
+
+	o.Bet = 0
+	o.Cards = nil
+	o.Hand = 0
+	o.Action = ""
+	o.Pos = 0
+	o.Room = nil
+
+	room.AddOccupant(o)
+
+	o.Broadcast(&Message{
+		From:     room.Id,
+		Type:     MsgPresence,
+		Action:   ActJoin,
+		Occupant: o,
+	})
+	o.SendMessage(&Message{
+		From:   room.Id,
+		Type:   MsgPresence,
+		Action: ActState,
+		Room:   room,
+	})
+}
+
 func (o *Occupant) Leave() (room *Room) {
 	room = o.Room
 	if room == nil {

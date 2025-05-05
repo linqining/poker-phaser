@@ -41,14 +41,6 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 	conn := NewConn(ws, 128)
 	defer conn.Close()
 
-	ver := &Version{}
-	if err := conn.ReadJSONTimeout(ver, readWait); err != nil {
-		return
-	}
-	if err := conn.WriteJSON(ver); err != nil {
-		return
-	}
-
 	auth := &Auth{}
 	if err := conn.ReadJSONTimeout(auth, readWait); err != nil {
 		return
@@ -59,8 +51,6 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 		o, err = p.OnAuth(conn, auth.Mechanism, auth.Text)
 		if err != nil {
 			log.Println(err)
-			//conn.WriteJSON(err)
-			//return
 			o = NewOccupant(strconv.FormatInt(time.Now().Unix(), 10), conn)
 			o.Name = auth.Text
 		}

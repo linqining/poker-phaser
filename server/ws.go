@@ -94,10 +94,12 @@ func (e *Error) Error() string {
 func handlePresence(o *Occupant, message *Message) {
 	switch message.Action {
 	case ActJoin:
-		if room := o.Join(message.To); room == nil {
-			o.SendError(1, "room not found")
-			return
-		}
+		room := GetRoom(message.To)
+		o.JoinRoom(room)
+		//if room := o.Join(message.To); room == nil {
+		//	o.SendError(1, "room not found")
+		//	return
+		//}
 	case ActLeave:
 		o.Leave()
 	case ActBet:

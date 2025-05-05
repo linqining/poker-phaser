@@ -79,9 +79,9 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch message.Type {
 		case MsgIQ:
-			go handleIQ(o, message)
+			handleIQ(o, message)
 		case MsgPresence:
-			go handlePresence(o, message)
+			handlePresence(o, message)
 		case MsgMessage:
 		}
 	}

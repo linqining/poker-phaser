@@ -169,6 +169,7 @@ var MainState = function() {
     this.gameStateObj.chipboxValue1 = 10;
     this.gameStateObj.chipboxValue2 = 20;
     this.gameStateObj.chipboxValue3 = 40;
+    this.createDone = false
 }
 
 
@@ -314,8 +315,7 @@ MainState.prototype = {
         this.animation.setPosParam(this.background.width, this.background.height, this.xOffset, this.yOffset);
         this.groupUser = game.add.group();
 
-        for (var i = 0; i < this.userPosRate.length; i++)
-        {
+        for (var i = 0; i < this.userPosRate.length; i++) {
             var dict = this.userPosRate[i];
             var user = new User();
             user.setScale(this.scale);
@@ -638,7 +638,7 @@ MainState.prototype = {
             console.log("card_typebg clicked");
             that.actionCardTypeToggle();
         }, this);
-
+        this.createDone = true
     },
 
     actionCardTypeToggle:function() {

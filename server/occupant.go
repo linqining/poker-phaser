@@ -163,7 +163,7 @@ func (o *Occupant) Join(rid string) (room *Room) {
 	o.Hand = 0
 	o.Action = ""
 	o.Pos = 0
-	o.Room = nil
+	o.Room = room
 
 	player := mental_poker.NewPlayer(room.game)
 	player.Setup()
@@ -204,14 +204,16 @@ func (o *Occupant) JoinRoom(room *Room) {
 	o.Hand = 0
 	o.Action = ""
 	o.Pos = 0
-	o.Room = nil
+	o.Room = room
 
 	player := mental_poker.NewPlayer(room.game)
 	player.Setup()
 	o.SetPlayer(player)
 
 	room.AddOccupant(o)
-
+	if room.N > 2 {
+		room.TryStart()
+	}
 	o.Broadcast(&Message{
 		From:     room.Id,
 		Type:     MsgPresence,
@@ -245,7 +247,7 @@ func (o *Occupant) Leave() (room *Room) {
 	o.Hand = 0
 	o.Action = ""
 	o.Pos = 0
-	o.Room = nil
+	//o.Room = nil
 	if o.timer != nil {
 		o.timer.Reset(0)
 	}

@@ -36,6 +36,7 @@ type Room struct {
 	allin     int
 	EndChan   chan int `json:"-"`
 	exitChan  chan interface{}
+	startChan chan struct{}
 	lock      sync.Mutex
 	//deck       *Deck
 	maskedDeck *DeckMasked
@@ -58,8 +59,9 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 		Max:       max,
 		lock:      sync.Mutex{},
 		//deck:      NewDeck(),
-		EndChan:  make(chan int),
-		exitChan: make(chan interface{}, 1),
+		EndChan:   make(chan int),
+		exitChan:  make(chan interface{}, 1),
+		startChan: make(chan struct{}, 1),
 	}
 	go func() {
 		timer := time.NewTimer(time.Second * 6)
@@ -70,6 +72,8 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 				timer.Reset(time.Second * 6)
 			case <-room.exitChan:
 				return
+			case <-room.startChan:
+				room.start()
 			}
 		}
 	}()
@@ -183,8 +187,13 @@ func (room *Room) start() {
 		}
 		return true
 	})
-	room.setup()
+	room.lock.Lock()
+	if room.N < 2 {
+		room.lock.Unlock()
+		return
+	}
 
+	room.setup()
 	// Select Dealer
 	button := room.Button - 1
 	room.Each((button+1)%room.Cap(), func(o *Occupant) bool {
@@ -194,12 +203,6 @@ func (room *Room) start() {
 	})
 
 	if dealer == nil {
-		return
-	}
-
-	room.lock.Lock()
-	if room.N < 2 {
-		room.lock.Unlock()
 		return
 	}
 

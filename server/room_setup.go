@@ -15,6 +15,13 @@ func (room *Room) SetUpGame() error {
 	return nil
 }
 
+func (room *Room) TryStart() {
+	select {
+	case room.startChan <- struct{}{}:
+	default:
+	}
+}
+
 func (room *Room) setup() error {
 	room.SetUpGame()
 	players := []*mental_poker.Player{}

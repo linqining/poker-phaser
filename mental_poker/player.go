@@ -277,13 +277,13 @@ type RevealTokenResponse struct {
 	TokenMap map[string]RevealTokenAndProof `json:"token_map"`
 }
 
-func (p *Player) ComputeRevealToken(card string) (*RevealTokenResponse, error) {
+func (p *Player) ComputeRevealToken(cards []string) (*RevealTokenResponse, error) {
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
 		"game_user_id": p.GameUserID,
 		"seed_hex":     p.Game.SeedHex,
-		"reveal_cards": []string{card},
+		"reveal_cards": cards,
 	}
 	resp, err := req.Post(revelTokenUrl)
 	if err != nil {
@@ -306,13 +306,13 @@ type PeekCardsResponse struct {
 	CardMap map[string]string `json:"card_map"`
 }
 
-func (p *Player) PeekCards(receiveCard ReceiveCard) (*PeekCardsResponse, error) {
+func (p *Player) PeekCards(receiveCards []ReceiveCard) (*PeekCardsResponse, error) {
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
 		"game_user_id": p.GameUserID,
 		"seed_hex":     p.Game.SeedHex,
-		"peek_cards":   []ReceiveCard{receiveCard},
+		"peek_cards":   receiveCards,
 	}
 	resp, err := req.Post(peekCardsUrl)
 	if err != nil {

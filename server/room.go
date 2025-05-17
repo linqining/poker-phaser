@@ -2,6 +2,7 @@ package poker
 
 import (
 	"fmt"
+	"github.com/ecodeclub/ekit/mapx"
 	"log"
 	"mental-poker/mental_poker"
 	"sort"
@@ -17,26 +18,26 @@ const (
 )
 
 type Room struct {
-	Id         string      `json:"id"`
-	SB         int         `json:"sb"`
-	BB         int         `json:"bb"`
-	Cards      []Card      `json:"cards,omitempty"`
-	Pot        []int       `json:"pot,omitempty"`
-	Timeout    int         `json:"timeout,omitempty"`
-	Button     int         `json:"button,omitempty"`
-	Occupants  []*Occupant `json:"occupants,omitempty"`
-	Chips      []int       `json:"chips,omitempty"`
-	Bet        int         `json:"bet,omitempty"`
-	N          int         `json:"n"`
-	Max        int         `json:"max"`
-	MaxChips   int         `json:"maxchips"`
-	MinChips   int         `json:"minchips"`
-	remain     int
-	allin      int
-	EndChan    chan int `json:"-"`
-	exitChan   chan interface{}
-	lock       sync.Mutex
-	deck       *Deck
+	Id        string      `json:"id"`
+	SB        int         `json:"sb"`
+	BB        int         `json:"bb"`
+	Cards     []Card      `json:"cards,omitempty"`
+	Pot       []int       `json:"pot,omitempty"`
+	Timeout   int         `json:"timeout,omitempty"`
+	Button    int         `json:"button,omitempty"`
+	Occupants []*Occupant `json:"occupants,omitempty"`
+	Chips     []int       `json:"chips,omitempty"`
+	Bet       int         `json:"bet,omitempty"`
+	N         int         `json:"n"`
+	Max       int         `json:"max"`
+	MaxChips  int         `json:"maxchips"`
+	MinChips  int         `json:"minchips"`
+	remain    int
+	allin     int
+	EndChan   chan int `json:"-"`
+	exitChan  chan interface{}
+	lock      sync.Mutex
+	//deck       *Deck
 	maskedDeck *DeckMasked
 	game       *mental_poker.Game
 }
@@ -56,9 +57,9 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 		Timeout:   10,
 		Max:       max,
 		lock:      sync.Mutex{},
-		deck:      NewDeck(),
-		EndChan:   make(chan int),
-		exitChan:  make(chan interface{}, 1),
+		//deck:      NewDeck(),
+		EndChan:  make(chan int),
+		exitChan: make(chan interface{}, 1),
 	}
 	go func() {
 		timer := time.NewTimer(time.Second * 6)
@@ -202,7 +203,7 @@ func (room *Room) start() {
 		return
 	}
 
-	room.deck.Shuffle()
+	//room.deck.Shuffle()
 
 	// Small Blind
 	sb := dealer.Next()
@@ -221,9 +222,11 @@ func (room *Room) start() {
 	room.allin = 0
 	room.Each(0, func(o *Occupant) bool {
 		o.Bet = 0
-		o.Cards = []Card{
-			room.deck.Take(), room.deck.Take(),
+		cards, err := room.DealCard(o, 2)
+		if err != nil {
+			log.Println(err)
 		}
+		o.Cards = cards
 		o.Hand = 0
 		//o.Action = ActReady
 		o.Action = ""
@@ -253,6 +256,11 @@ func (room *Room) start() {
 		})
 		return true
 	})
+	var (
+		err        error
+		turnCards  []Card
+		riverCards []Card
+	)
 
 	room.action(bbPos%room.Cap() + 1)
 	if room.remain <= 1 {
@@ -262,17 +270,20 @@ func (room *Room) start() {
 
 	// Round 2 : Flop
 	room.ready()
-	room.Cards = []Card{
-		room.deck.Take(),
-		room.deck.Take(),
-		room.deck.Take(),
+	room.Cards, err = room.DealPublicCard(3)
+	if err != nil {
+		panic(err)
 	}
 	room.Each(0, func(o *Occupant) bool {
 		var hand [5]Card
 		if len(o.Cards) > 0 {
 			cards := hand[0:0]
-			cards = append(cards, o.Cards...)
+			//cards = append(cards, o.RevealCards...) // todo handle reveal cards
+			cards = append(cards, o.Cards...) //TODO this action handle by user not by server
+			log.Println(o.player.GameUserID, cards)
 			cards = append(cards, room.Cards...)
+			log.Println(o.player.GameUserID, hand)
+			log.Println(o.player.GameUserID, cards)
 			o.Hand = Eva5Hand(hand)
 		}
 		o.SendMessage(&Message{
@@ -294,7 +305,11 @@ func (room *Room) start() {
 
 	// Round 3 : Turn
 	room.ready()
-	room.Cards = append(room.Cards, room.deck.Take())
+	turnCards, err = room.DealPublicCard(1)
+	if err != nil {
+		panic(err)
+	}
+	room.Cards = append(room.Cards, turnCards...)
 	room.Each(0, func(o *Occupant) bool {
 		var hand [6]Card
 		if len(o.Cards) > 0 {
@@ -320,7 +335,11 @@ func (room *Room) start() {
 
 	// Round 4 : River
 	room.ready()
-	room.Cards = append(room.Cards, room.deck.Take())
+	riverCards, err = room.DealPublicCard(1)
+	if err != nil {
+		panic(err)
+	}
+	room.Cards = append(room.Cards, riverCards...)
 	room.Each(0, func(o *Occupant) bool {
 		var hand [7]Card
 		if len(o.Cards) > 0 {
@@ -349,6 +368,42 @@ showdown:
 		Action: ActShowdown,
 		Room:   room,
 	})
+}
+
+func (room *Room) AllPlayers() []*mental_poker.Player {
+	players := []*mental_poker.Player{}
+	for _, occu := range room.Occupants {
+		if occu == nil {
+			continue
+		}
+		players = append(players, occu.player)
+	}
+	return players
+}
+
+func (room *Room) CollectRevealTokens(o *Occupant, cards []string) ([]*mental_poker.ReceiveCard, error) {
+	players := room.AllPlayers()
+	dealCardMap := make(map[string]*mental_poker.ReceiveCard)
+	for _, card := range cards {
+		dealCardMap[card] = &mental_poker.ReceiveCard{
+			Card: card,
+		}
+	}
+	for _, player := range players {
+		if player.GameUserID == o.player.GameUserID {
+			continue
+		}
+		tokenResp, err := player.ComputeRevealToken(cards)
+		if err != nil {
+			return nil, err
+		}
+		// todo encrypt token with users pk
+		for card, cardAndProof := range tokenResp.TokenMap {
+			dealCardMap[card].RevealToken = append(dealCardMap[card].RevealToken, cardAndProof)
+		}
+	}
+	return mapx.Values(dealCardMap), nil
+
 }
 
 func (room *Room) action(pos int) {
@@ -572,6 +627,7 @@ func GetRoom(id string) *Room {
 			}
 		}
 		room = NewRoom(id, 9, 500, 1000)
+		room.SetUpGame()
 		setRoom(room)
 	}
 

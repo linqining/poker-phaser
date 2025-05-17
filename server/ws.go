@@ -3,6 +3,7 @@ package poker
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
 )
 
@@ -94,7 +95,13 @@ func (e *Error) Error() string {
 func handlePresence(o *Occupant, message *Message) {
 	switch message.Action {
 	case ActJoin:
+		if message.To == "" {
+			message.To = "1"
+		}
 		room := GetRoom(message.To)
+		if room == nil {
+			log.Panic("room not found", message.To)
+		}
 		o.JoinRoom(room)
 		//if room := o.Join(message.To); room == nil {
 		//	o.SendError(1, "room not found")

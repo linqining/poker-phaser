@@ -18,7 +18,7 @@ var (
 func init() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
-	flag.StringVar(&Addr, "addr", ":8989", "server address ip:port")
+	flag.StringVar(&Addr, "addr", ":8988", "server address ip:port")
 	flag.StringVar(&WebRoot, "web", "", "web directory rooted path")
 	flag.Parse()
 }

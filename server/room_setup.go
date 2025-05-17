@@ -5,18 +5,22 @@ import (
 	"mental-poker/mental_poker"
 )
 
-func (room *Room) setup() error {
+func (room *Room) SetUpGame() error {
 	initialDeckResp, err := mental_poker.InitializeDeck()
 	if err != nil {
 		return err
 	}
 	game := mental_poker.NewGame(initialDeckResp.Cards, initialDeckResp.SeedHex)
 	room.game = game
+	return nil
+}
 
+func (room *Room) setup() error {
+	room.SetUpGame()
 	players := []*mental_poker.Player{}
 
 	room.Each(0, func(o *Occupant) bool {
-		player := mental_poker.NewPlayer(game)
+		player := mental_poker.NewPlayer(room.game)
 		player.Setup()
 		players = append(players, player)
 		o.SetPlayer(player)
@@ -66,7 +70,8 @@ func (room *Room) setup() error {
 		finalProof = shuffleResp.ShuffleProof
 	}
 	log.Println("shuffle complete", finalProof, finalCards)
-	game.SetShuffleCards(finalCards)
+	room.game.SetShuffleCards(finalCards)
+	room.maskedDeck = NewDeckMasked(room.game.InitialCards, room.game.ShuffleCards)
 	return nil
 }
 

@@ -70,39 +70,34 @@ func (m MaskedCard) ToCard() Card {
 }
 
 type DeckMasked struct {
-	Cards   []MaskedCard `json:"cards"`
-	CardMap map[string]ClassicCard
-	pos     int
+	CardMap     map[string]MaskedCard
+	pos         int
+	MaskedCards []string
 }
 
 type InitialDeckResponse struct {
 	Cards []MaskedCard `json:"cards"`
 }
 
-func NewDeckMasked(cards []mental_poker.InitialCard) (*DeckMasked, error) {
-	cardMap := make(map[string]ClassicCard)
-	maskCards := make([]MaskedCard, 0, len(cards))
+func NewDeckMasked(cards []mental_poker.InitialCard, shuffledCards []string) *DeckMasked {
+	cardMap := make(map[string]MaskedCard)
 	for _, card := range cards {
 		classicCard := ClassicCard{Value: card.ClassicCard.Value, Suite: card.ClassicCard.Suite}
-		maskCards = append(maskCards, MaskedCard{
-			Card:        card.Card,
-			ClassicCard: classicCard,
-		})
-		cardMap[card.Card] = classicCard
+		cardMap[card.Card] = MaskedCard{ClassicCard: classicCard, Card: card.Card}
 	}
-	return &DeckMasked{Cards: maskCards, CardMap: cardMap}, nil
+	return &DeckMasked{CardMap: cardMap, MaskedCards: shuffledCards}
 }
 
-func (deck *DeckMasked) Find(rank, suit int) Card {
-	for _, maskedCard := range deck.Cards {
-		card := maskedCard.ToCard()
-		if card.Rank() == rank && card.Suit() == suit {
-			return card
-		}
-	}
-
-	return NilCard
-}
+//func (deck *DeckMasked) Find(rank, suit int) Card {
+//	for _, maskedCard := range deck.Cards {
+//		card := maskedCard.ToCard()
+//		if card.Rank() == rank && card.Suit() == suit {
+//			return card
+//		}
+//	}
+//
+//	return NilCard
+//}
 
 //func (deck *Deck) Shuffle() {
 //	deck.pos = 0
@@ -113,12 +108,11 @@ func (deck *DeckMasked) Find(rank, suit int) Card {
 //	}
 //}
 
-func (deck *DeckMasked) Take() Card {
+func (deck *DeckMasked) Take() string {
 	if deck.pos >= NumCard {
-		return NilCard
+		return ""
 	}
-
-	card := deck.Cards[deck.pos]
+	card := deck.MaskedCards[deck.pos]
 	deck.pos++
-	return card.ToCard()
+	return card
 }

@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type DealCard struct {
+	MaskedCard            string
+	EncryptedRevealTokens []string
+}
+
 type Occupant struct {
 	Id      string `json:"id"`
 	Name    string `json:"name"`
@@ -16,11 +21,12 @@ type Occupant struct {
 	Level   int    `json:"level"`
 	Chips   int    `json:"chips"`
 
-	Pos    int    `json:"index,omitempty"`
-	Bet    int    `json:"bet,omitempty"`
-	Action string `json:"action,omitempty"`
-	Cards  []Card `json:"cards,omitempty"`
-	Hand   int    `json:"hand,omitempty"`
+	Pos         int                         `json:"index,omitempty"`
+	Bet         int                         `json:"bet,omitempty"`
+	Action      string                      `json:"action,omitempty"`
+	Cards       []Card                      `json:"cards,omitempty"`
+	RevealCards []*mental_poker.ReceiveCard `json:"reveal_cards,omitempty"`
+	Hand        int                         `json:"hand,omitempty"`
 
 	conn *Conn
 	Room *Room `json:"-"`
@@ -159,6 +165,10 @@ func (o *Occupant) Join(rid string) (room *Room) {
 	o.Pos = 0
 	o.Room = nil
 
+	player := mental_poker.NewPlayer(room.game)
+	player.Setup()
+	o.SetPlayer(player)
+
 	room.AddOccupant(o)
 
 	o.Broadcast(&Message{
@@ -195,6 +205,10 @@ func (o *Occupant) JoinRoom(room *Room) {
 	o.Action = ""
 	o.Pos = 0
 	o.Room = nil
+
+	player := mental_poker.NewPlayer(room.game)
+	player.Setup()
+	o.SetPlayer(player)
 
 	room.AddOccupant(o)
 

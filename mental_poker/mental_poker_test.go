@@ -76,7 +76,7 @@ func TestGenerate(t *testing.T) {
 		tokens := []RevealTokenAndProof{}
 		for _, p := range players {
 			if player.GameUserID != p.GameUserID {
-				resp, err := p.ComputeRevealToken(card)
+				resp, err := p.ComputeRevealToken([]string{card})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -89,7 +89,7 @@ func TestGenerate(t *testing.T) {
 	}
 
 	for _, player := range players {
-		peekResp, err := player.PeekCards(player.ReceiveCards[0])
+		peekResp, err := player.PeekCards(player.ReceiveCards)
 		if err != nil {
 			t.Fatal(err)
 		}

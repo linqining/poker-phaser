@@ -3,6 +3,7 @@ package poker
 import (
 	"fmt"
 	"log"
+	"mental-poker/mental_poker"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,37 +17,34 @@ const (
 )
 
 type Room struct {
-	Id        string      `json:"id"`
-	SB        int         `json:"sb"`
-	BB        int         `json:"bb"`
-	Cards     []Card      `json:"cards,omitempty"`
-	Pot       []int       `json:"pot,omitempty"`
-	Timeout   int         `json:"timeout,omitempty"`
-	Button    int         `json:"button,omitempty"`
-	Occupants []*Occupant `json:"occupants,omitempty"`
-	Chips     []int       `json:"chips,omitempty"`
-	Bet       int         `json:"bet,omitempty"`
-	N         int         `json:"n"`
-	Max       int         `json:"max"`
-	MaxChips  int         `json:"maxchips"`
-	MinChips  int         `json:"minchips"`
-	remain    int
-	allin     int
-	EndChan   chan int `json:"-"`
-	exitChan  chan interface{}
-	lock      sync.Mutex
-	deck      *Deck
-	maskdeck  *DeckMasked
+	Id         string      `json:"id"`
+	SB         int         `json:"sb"`
+	BB         int         `json:"bb"`
+	Cards      []Card      `json:"cards,omitempty"`
+	Pot        []int       `json:"pot,omitempty"`
+	Timeout    int         `json:"timeout,omitempty"`
+	Button     int         `json:"button,omitempty"`
+	Occupants  []*Occupant `json:"occupants,omitempty"`
+	Chips      []int       `json:"chips,omitempty"`
+	Bet        int         `json:"bet,omitempty"`
+	N          int         `json:"n"`
+	Max        int         `json:"max"`
+	MaxChips   int         `json:"maxchips"`
+	MinChips   int         `json:"minchips"`
+	remain     int
+	allin      int
+	EndChan    chan int `json:"-"`
+	exitChan   chan interface{}
+	lock       sync.Mutex
+	deck       *Deck
+	maskedDeck *DeckMasked
+	game       *mental_poker.Game
 }
 
 func NewRoom(id string, max int, sb, bb int) *Room {
 	if max <= 0 || max > MaxN {
 		max = 9 // default 9 occupants
 	}
-	//deck, err := NewDeckMasked()
-	//if err != nil {
-	//	panic(err)
-	//}
 
 	room := &Room{
 		Id:        id,
@@ -55,7 +53,7 @@ func NewRoom(id string, max int, sb, bb int) *Room {
 		SB:        sb,
 		BB:        bb,
 		Pot:       make([]int, 1),
-		Timeout:   5,
+		Timeout:   10,
 		Max:       max,
 		lock:      sync.Mutex{},
 		deck:      NewDeck(),
@@ -159,7 +157,7 @@ func (room *Room) Broadcast(message *Message) {
 }
 
 // start starts from 0
-func (room *Room) Each(start int, f func(o *Occupant) bool) {
+func (room *Room) Each(start int, f func(o *Occupant) (isContinue bool)) {
 	end := (room.Cap() + start - 1) % room.Cap()
 	i := start
 	for ; i != end; i = (i + 1) % room.Cap() {
@@ -176,13 +174,15 @@ func (room *Room) Each(start int, f func(o *Occupant) bool) {
 
 func (room *Room) start() {
 	var dealer *Occupant
-
+	// remove zero chips user
+	// 合约交互
 	room.Each(0, func(o *Occupant) bool {
 		if o.Chips < room.BB {
 			o.Leave()
 		}
 		return true
 	})
+	room.setup()
 
 	// Select Dealer
 	button := room.Button - 1
@@ -201,12 +201,6 @@ func (room *Room) start() {
 		room.lock.Unlock()
 		return
 	}
-	//var err error
-	//room.deck, err = NewDeckMasked()
-	//if err != nil {
-	//	log.Println(err)
-	//	return
-	//}
 
 	room.deck.Shuffle()
 
@@ -227,7 +221,9 @@ func (room *Room) start() {
 	room.allin = 0
 	room.Each(0, func(o *Occupant) bool {
 		o.Bet = 0
-		o.Cards = []Card{room.deck.Take(), room.deck.Take()}
+		o.Cards = []Card{
+			room.deck.Take(), room.deck.Take(),
+		}
 		o.Hand = 0
 		//o.Action = ActReady
 		o.Action = ""
@@ -575,7 +571,7 @@ func GetRoom(id string) *Room {
 				return v
 			}
 		}
-		room = NewRoom(id, 9, 5, 10)
+		room = NewRoom(id, 9, 500, 1000)
 		setRoom(room)
 	}
 
@@ -586,7 +582,7 @@ func GetOrCreateRoom(id string) *Room {
 	if room := GetRoom(id); room != nil {
 		return room
 	}
-	room := NewRoom(id, 9, 5, 10)
+	room := NewRoom(id, 9, 500, 1000)
 
 	//if message.Room != nil {
 	//	if message.Room.SB > 0 {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/ecodeclub/ekit/slice"
+	"github.com/google/uuid"
 	"github.com/mozillazg/request"
 	"io"
 	"log"
@@ -16,19 +17,17 @@ type UserKeyProof struct {
 }
 
 type Player struct {
-	PublicKey    string
 	GameUserID   string
-	GameID       string
+	Game         *Game
+	PublicKey    string
 	UserKeyProof UserKeyProof
 	JoinedKey    string
-	SeedHex      string
-	Cards        []InitialCard
 	ReceiveCards []ReceiveCard
 }
 
 func (p *Player) ToAggPlayer() *AggPlayer {
 	return &AggPlayer{
-		GameID:        p.GameID,
+		GameID:        p.Game.GameID,
 		GameUserID:    p.GameUserID,
 		UserKeyProof:  p.UserKeyProof,
 		UserPublicKey: p.PublicKey,
@@ -79,8 +78,11 @@ func InitializeDeck() (*InitializeDeckResp, error) {
 	return ret, nil
 }
 
-func NewPlayer() *Player {
-	return &Player{}
+func NewPlayer(game *Game) *Player {
+	return &Player{
+		GameUserID: uuid.New().String(),
+		Game:       game,
+	}
 }
 
 func (c *Player) SetJoinedKey(publicKey string) {
@@ -98,26 +100,19 @@ type SetUpResponse struct {
 	} `json:"user_key_proof"`
 }
 
-func (p *Player) Setup(gameID string, gameUserID string, initialDeck *InitializeDeckResp) (*SetUpResponse, error) {
-	p.SeedHex = initialDeck.SeedHex
-	p.Cards = initialDeck.Cards
-
+func (p *Player) Setup() (*SetUpResponse, error) {
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]string{
 		"user_id":      "123",
-		"game_id":      gameID,
-		"game_user_id": gameUserID,
-		"seed_hex":     initialDeck.SeedHex,
+		"game_id":      p.Game.GameID,
+		"game_user_id": p.GameUserID,
+		"seed_hex":     p.Game.SeedHex,
 	}
 	resp, err := req.Post(setUpUrl)
 	if err != nil {
 		return nil, err
 	}
-	//j, err := resp.Json()
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	data, _ := io.ReadAll(resp.Body)
 	log.Println(string(data))
@@ -126,8 +121,6 @@ func (p *Player) Setup(gameID string, gameUserID string, initialDeck *Initialize
 	if err != nil {
 		return nil, err
 	}
-	p.GameID = gameID
-	p.GameUserID = gameUserID
 	p.PublicKey = setUpResponse.UserPublicKey
 	p.UserKeyProof = UserKeyProof{
 		Commit:  setUpResponse.UserKeyProof.Commit,
@@ -152,7 +145,7 @@ func (p *Player) ComputeAggregatekey(players []*AggPlayer) (*ComputeAggKeyResp, 
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
 		"players":  players,
-		"seed_hex": p.SeedHex,
+		"seed_hex": p.Game.SeedHex,
 	}
 	resp, err := req.Post(computeAggUrl)
 	if err != nil {
@@ -182,13 +175,13 @@ type MaskResponse struct {
 }
 
 func (p *Player) Mask() (*MaskResponse, error) {
-	cards := slice.Map(p.Cards, func(idx int, src InitialCard) string {
+	cards := slice.Map(p.Game.InitialCards, func(idx int, src InitialCard) string {
 		return src.Card
 	})
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
-		"seed_hex":   p.SeedHex,
+		"seed_hex":   p.Game.SeedHex,
 		"cards":      cards,
 		"joined_key": p.JoinedKey,
 	}
@@ -217,7 +210,7 @@ func (p *Player) Shuffle(cards []string) (*ShuffleResponse, error) {
 	c := new(http.Client)
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
-		"seed_hex":   p.SeedHex,
+		"seed_hex":   p.Game.SeedHex,
 		"cards":      cards,
 		"joined_key": p.JoinedKey,
 	}
@@ -247,7 +240,7 @@ func (p *Player) VerifyShuffle(originCards []string, shuffledCards []string, shu
 	req.Json = map[string]interface{}{
 		"proof":          shuffleProof,
 		"joined_key":     p.JoinedKey,
-		"seed_hex":       p.SeedHex,
+		"seed_hex":       p.Game.SeedHex,
 		"origin_cards":   originCards,
 		"shuffled_cards": shuffledCards,
 	}
@@ -289,7 +282,7 @@ func (p *Player) ComputeRevealToken(card string) (*RevealTokenResponse, error) {
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
 		"game_user_id": p.GameUserID,
-		"seed_hex":     p.SeedHex,
+		"seed_hex":     p.Game.SeedHex,
 		"reveal_cards": []string{card},
 	}
 	resp, err := req.Post(revelTokenUrl)
@@ -318,7 +311,7 @@ func (p *Player) PeekCards(receiveCard ReceiveCard) (*PeekCardsResponse, error) 
 	req := request.NewRequest(c)
 	req.Json = map[string]interface{}{
 		"game_user_id": p.GameUserID,
-		"seed_hex":     p.SeedHex,
+		"seed_hex":     p.Game.SeedHex,
 		"peek_cards":   []ReceiveCard{receiveCard},
 	}
 	resp, err := req.Post(peekCardsUrl)

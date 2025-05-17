@@ -13,18 +13,18 @@ func TestGenerate(t *testing.T) {
 	intialCardMap := slice.ToMapV(initialDeck.Cards, func(element InitialCard) (string, ClassicCard) {
 		return element.Card, element.ClassicCard
 	})
-	game := Game{InitialCards: initialDeck.Cards, SeedHex: initialDeck.SeedHex}
+
+	game := NewGame(initialDeck.Cards, initialDeck.SeedHex)
 	//t.Log(initialDeck)
 
-	gameID := "game123"
-	andrija := NewPlayer()
-	andrija.Setup(gameID, "andrija", initialDeck)
-	kobi := NewPlayer()
-	kobi.Setup(gameID, "kobi", initialDeck)
-	nico := NewPlayer()
-	nico.Setup(gameID, "nico", initialDeck)
-	tom := NewPlayer()
-	tom.Setup(gameID, "tom", initialDeck)
+	andrija := NewPlayer(game)
+	andrija.Setup()
+	kobi := NewPlayer(game)
+	kobi.Setup()
+	nico := NewPlayer(game)
+	nico.Setup()
+	tom := NewPlayer(game)
+	tom.Setup()
 
 	players := []*Player{
 		andrija, kobi, nico, tom,
@@ -41,6 +41,7 @@ func TestGenerate(t *testing.T) {
 		}
 		player.SetJoinedKey(aggResp.JoinedKey)
 	}
+
 	maskResp, err := players[0].Mask()
 	t.Log(maskResp)
 	t.Log(err)
@@ -68,7 +69,7 @@ func TestGenerate(t *testing.T) {
 		finalProof = shuffleResp.ShuffleProof
 	}
 	t.Log("shuffle complete", finalProof, finalCards)
-	game.ShuffleCards = finalCards
+	game.SetShuffleCards(finalCards)
 	for i := 0; i < 4; i++ {
 		card := finalCards[i]
 		player := players[i]
@@ -107,11 +108,12 @@ func TestGenerate(t *testing.T) {
 
 }
 
-func TestInitialize(t *testing.T) {
-	data, err := InitializeDeck()
-	t.Log(err)
-	t.Log(data)
-	gameID := "game123"
-	andrija := NewPlayer()
-	andrija.Setup(gameID, "andrija", data)
-}
+//
+//func TestInitialize(t *testing.T) {
+//	data, err := InitializeDeck()
+//	t.Log(err)
+//	t.Log(data)
+//	gameID := "game123"
+//	andrija := NewPlayer()
+//	andrija.Setup()
+//}

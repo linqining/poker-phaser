@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/linqining/poker-phaser"
 	"log"
 	"math/rand"
+	poker "mental-poker/server"
 	"net"
 	"net/url"
 	"os"

@@ -1,9 +1,7 @@
 package poker
 
 import (
-	"encoding/json"
-	"io"
-	"net/http"
+	"mental-poker/mental_poker"
 )
 
 type ClassicCard struct {
@@ -13,7 +11,7 @@ type ClassicCard struct {
 
 type MaskedCard struct {
 	ClassicCard ClassicCard `json:"classic_card"`
-	Card        []byte      `json:"card"`
+	Card        string      `json:"card"`
 }
 
 func (m MaskedCard) ToCard() Card {
@@ -72,30 +70,27 @@ func (m MaskedCard) ToCard() Card {
 }
 
 type DeckMasked struct {
-	Cards []MaskedCard `json:"cards"`
-	pos   int
+	Cards   []MaskedCard `json:"cards"`
+	CardMap map[string]ClassicCard
+	pos     int
 }
 
 type InitialDeckResponse struct {
 	Cards []MaskedCard `json:"cards"`
 }
 
-func NewDeckMasked() (*DeckMasked, error) {
-	// todo replace address
-	response, err := http.Get("http://127.0.0.1:8000/deck/initialize")
-	if err != nil {
-		return nil, err
+func NewDeckMasked(cards []mental_poker.InitialCard) (*DeckMasked, error) {
+	cardMap := make(map[string]ClassicCard)
+	maskCards := make([]MaskedCard, 0, len(cards))
+	for _, card := range cards {
+		classicCard := ClassicCard{Value: card.ClassicCard.Value, Suite: card.ClassicCard.Suite}
+		maskCards = append(maskCards, MaskedCard{
+			Card:        card.Card,
+			ClassicCard: classicCard,
+		})
+		cardMap[card.Card] = classicCard
 	}
-	initialDeck := new(InitialDeckResponse)
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(data, initialDeck)
-	if err != nil {
-		return nil, err
-	}
-	return &DeckMasked{Cards: initialDeck.Cards}, nil
+	return &DeckMasked{Cards: maskCards, CardMap: cardMap}, nil
 }
 
 func (deck *DeckMasked) Find(rank, suit int) Card {

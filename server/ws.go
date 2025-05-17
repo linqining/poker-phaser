@@ -115,7 +115,7 @@ func handleIQ(o *Occupant, message *Message) {
 	case ActSet:
 		switch message.Class {
 		case "room":
-			room := NewRoom("", 9, 5, 10)
+			room := NewRoom("", 9, 500, 1000)
 
 			if message.Room != nil {
 				if message.Room.SB > 0 {

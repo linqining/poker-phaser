@@ -3,6 +3,8 @@ package poker
 import (
 	"errors"
 	"log"
+	"mental-poker/mental_poker"
+
 	//"strconv"
 	"time"
 )
@@ -26,6 +28,7 @@ type Occupant struct {
 	recv    chan *Message
 	Actions chan *Message `json:"-"`
 	timer   *time.Timer   // action timer
+	player  *mental_poker.Player
 }
 
 func NewOccupant(id string, conn *Conn) *Occupant {
@@ -54,6 +57,10 @@ func NewOccupant(id string, conn *Conn) *Occupant {
 	}()
 
 	return o
+}
+
+func (o *Occupant) SetPlayer(p *mental_poker.Player) {
+	o.player = p
 }
 
 func (o *Occupant) Broadcast(message *Message) {

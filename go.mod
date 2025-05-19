@@ -12,6 +12,7 @@ require (
 
 require (
 	github.com/bitly/go-simplejson v0.5.1 // indirect
+	github.com/block-vision/sui-go-sdk v1.0.7 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect

@@ -1,7 +1,12 @@
 package poker
 
 import (
+	"context"
 	"fmt"
+	"github.com/block-vision/sui-go-sdk/constant"
+	"github.com/block-vision/sui-go-sdk/models"
+	"github.com/block-vision/sui-go-sdk/signer"
+	"github.com/block-vision/sui-go-sdk/sui"
 	"github.com/ecodeclub/ekit/mapx"
 	"log"
 	"mental-poker/mental_poker"
@@ -15,6 +20,10 @@ import (
 const (
 	actionWait = 20 * time.Second
 	MaxN       = 10
+	mnemonic   = "fly happy jungle remind dune replace deer travel good man sleep faint"
+	// address 0x813f37c19631325b3bb81c4922e8244c53b42afd46c755ee3e8da779903bbfd9
+	MovePkgID     = "0xa97b2d38db99e7632210577340711d88e427907958fb8336bb9c5a11e9ff4f55"
+	GameDataObjID = "0xe1e863f5179724e203680d9944fdc85337708008517fd3bd9465b63740166f41"
 )
 
 type Room struct {
@@ -371,6 +380,7 @@ showdown:
 		Action: ActShowdown,
 		Room:   room,
 	})
+	room.checkAndEndGame()
 }
 
 func (room *Room) AllPlayers() []*mental_poker.Player {
@@ -580,6 +590,80 @@ func (room *Room) betting(pos, n int) (raised bool) {
 	})
 
 	return
+}
+
+func (room *Room) checkAndEndGame() {
+	type UserSettle struct {
+		Player     string `json:"player"`
+		ChipAmount int    `json:"chip_amount"`
+	}
+	userSettles := []UserSettle{}
+
+	hasChipUserCnt := 0
+	playerCnt := 0
+	for _, occupant := range room.Occupants {
+		if occupant != nil && occupant.player != nil {
+			playerCnt++
+			if occupant.Chips > 0 {
+				hasChipUserCnt++
+			}
+			userSettles = append(userSettles, UserSettle{
+				Player:     occupant.Id,
+				ChipAmount: occupant.Chips,
+			})
+		}
+	}
+
+	// gameover
+	if playerCnt > 0 && hasChipUserCnt <= 1 {
+		room.Each(0, func(o *Occupant) bool {
+			o.Leave()
+			return true
+		})
+		// call contract endgame
+		cli := sui.NewSuiClient(constant.BvTestnetEndpoint)
+		signerAccount, err := signer.NewSignertWithMnemonic(mnemonic)
+		if err != nil {
+			log.Panicln(err)
+		}
+		rsp, err := cli.MoveCall(context.Background(), models.MoveCallRequest{
+			Signer:          signerAccount.Address,
+			PackageObjectId: MovePkgID,
+			Module:          "mental_poker",
+			Function:        "finish_game",
+			TypeArguments:   []interface{}{},
+			Arguments: []interface{}{
+				room.game.GameID,
+				GameDataObjID,
+				userSettles,
+			},
+			//Gas:       &gasObj,
+			GasBudget: "100000000",
+		})
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		// see the successful transaction url: https://explorer.sui.io/txblock/CD5hFB4bWFThhb6FtvKq3xAxRri72vsYLJAVd7p9t2sR?network=testnet
+		rsp2, err := cli.SignAndExecuteTransactionBlock(context.Background(), models.SignAndExecuteTransactionBlockRequest{
+			TxnMetaData: rsp,
+			PriKey:      signerAccount.PriKey,
+			// only fetch the effects field
+			Options: models.SuiTransactionBlockOptions{
+				ShowInput:    true,
+				ShowRawInput: true,
+				ShowEffects:  true,
+			},
+			RequestType: "WaitForLocalExecution",
+		})
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		log.Println(rsp2)
+	}
 }
 
 type roomlist struct {

@@ -37,6 +37,7 @@ func (p *Player) ToAggPlayer() *AggPlayer {
 const (
 	baseUrl          = "http://127.0.0.1:8000"
 	setUpUrl         = baseUrl + "/deck/setup"
+	clearUrl         = baseUrl + "/deck/clear"
 	initialUrl       = baseUrl + "/deck/initialize"
 	computeAggUrl    = baseUrl + "/deck/compute_aggregate_key"
 	maskUrl          = baseUrl + "/deck/mask"
@@ -336,5 +337,23 @@ func (p *Player) ReceiveCard(card string, tokens []RevealTokenAndProof) error {
 		Card:        card,
 		RevealToken: tokens,
 	})
+	return nil
+}
+
+func (p *Player) Clear() error {
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Json = map[string]string{
+		"user_id":      "123",
+		"game_id":      p.Game.GameID,
+		"game_user_id": p.GameUserID,
+	}
+	resp, err := req.Post(clearUrl)
+	if err != nil {
+		return err
+	}
+
+	data, _ := io.ReadAll(resp.Body)
+	log.Println(string(data))
 	return nil
 }

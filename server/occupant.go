@@ -253,7 +253,7 @@ func (o *Occupant) Leave() (room *Room) {
 	if o.timer != nil {
 		o.timer.Reset(0)
 	}
-
+	o.player.Clear()
 	return
 }
 

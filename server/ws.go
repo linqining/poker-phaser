@@ -57,6 +57,7 @@ type Message struct {
 	Occupant *Occupant `json:"occupant,omitempty"`
 	Room     *Room     `json:"room,omitempty"`
 	Rooms    []*Room   `json:"rooms,omitempty"`
+	Chips    int       `json:"chips,omitempty"`
 }
 
 type Version struct {
@@ -102,7 +103,7 @@ func handlePresence(o *Occupant, message *Message) {
 		if room == nil {
 			log.Panic("room not found", message.To)
 		}
-		o.JoinRoom(room)
+		o.JoinRoom(room, message.Chips)
 		//if room := o.Join(message.To); room == nil {
 		//	o.SendError(1, "room not found")
 		//	return

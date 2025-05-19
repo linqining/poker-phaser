@@ -10,7 +10,7 @@ func (room *Room) SetUpGame() error {
 	if err != nil {
 		return err
 	}
-	game := mental_poker.NewGame(initialDeckResp.Cards, initialDeckResp.SeedHex)
+	game := mental_poker.NewGame(room.Id, initialDeckResp.Cards, initialDeckResp.SeedHex)
 	room.game = game
 	return nil
 }

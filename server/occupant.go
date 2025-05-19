@@ -152,42 +152,42 @@ func (o *Occupant) GetAction(timeout time.Duration) (*Message, error) {
 	}
 }
 
-func (o *Occupant) Join(rid string) (room *Room) {
-	room = GetRoom(rid)
-	if room == nil {
-		return
-	}
+//func (o *Occupant) Join(rid string) (room *Room) {
+//	room = GetRoom(rid)
+//	if room == nil {
+//		return
+//	}
+//
+//	o.Bet = 0
+//	o.Cards = nil
+//	o.Hand = 0
+//	o.Action = ""
+//	o.Pos = 0
+//	o.Room = room
+//
+//	player := mental_poker.NewPlayer(room.game)
+//	player.Setup()
+//	o.SetPlayer(player)
+//
+//	room.AddOccupant(o)
+//
+//	o.Broadcast(&Message{
+//		From:     room.Id,
+//		Type:     MsgPresence,
+//		Action:   ActJoin,
+//		Occupant: o,
+//	})
+//	o.SendMessage(&Message{
+//		From:   room.Id,
+//		Type:   MsgPresence,
+//		Action: ActState,
+//		Room:   room,
+//	})
+//
+//	return
+//}
 
-	o.Bet = 0
-	o.Cards = nil
-	o.Hand = 0
-	o.Action = ""
-	o.Pos = 0
-	o.Room = room
-
-	player := mental_poker.NewPlayer(room.game)
-	player.Setup()
-	o.SetPlayer(player)
-
-	room.AddOccupant(o)
-
-	o.Broadcast(&Message{
-		From:     room.Id,
-		Type:     MsgPresence,
-		Action:   ActJoin,
-		Occupant: o,
-	})
-	o.SendMessage(&Message{
-		From:   room.Id,
-		Type:   MsgPresence,
-		Action: ActState,
-		Room:   room,
-	})
-
-	return
-}
-
-func (o *Occupant) JoinRoom(room *Room) {
+func (o *Occupant) JoinRoom(room *Room, chips int) {
 	existOccupant := room.Occupant(o.Id)
 	if existOccupant != nil {
 		o.SendMessage(&Message{
@@ -205,6 +205,8 @@ func (o *Occupant) JoinRoom(room *Room) {
 	o.Action = ""
 	o.Pos = 0
 	o.Room = room
+	o.Chips = chips
+	log.Panicln("user join with  chips", o.Name, chips)
 
 	player := mental_poker.NewPlayer(room.game)
 	player.Setup()

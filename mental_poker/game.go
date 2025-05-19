@@ -1,9 +1,5 @@
 package mental_poker
 
-import (
-	"github.com/google/uuid"
-)
-
 type Game struct {
 	InitialCards []InitialCard `json:"initial_cards"`
 	SeedHex      string        `json:"seed_hex"`
@@ -11,11 +7,11 @@ type Game struct {
 	GameID       string        `json:"game_id"`
 }
 
-func NewGame(cards []InitialCard, seedHex string) *Game {
+func NewGame(room_id string, cards []InitialCard, seedHex string) *Game {
 	return &Game{
 		InitialCards: cards,
 		SeedHex:      seedHex,
-		GameID:       uuid.New().String(),
+		GameID:       room_id,
 	}
 }
 

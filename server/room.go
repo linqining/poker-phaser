@@ -10,7 +10,6 @@ import (
 	"github.com/ecodeclub/ekit/mapx"
 	"log"
 	"mental-poker/mental_poker"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,8 +21,8 @@ const (
 	MaxN       = 10
 	mnemonic   = "fly happy jungle remind dune replace deer travel good man sleep faint"
 	// address 0x813f37c19631325b3bb81c4922e8244c53b42afd46c755ee3e8da779903bbfd9
-	MovePkgID     = "0xa97b2d38db99e7632210577340711d88e427907958fb8336bb9c5a11e9ff4f55"
-	GameDataObjID = "0xe1e863f5179724e203680d9944fdc85337708008517fd3bd9465b63740166f41"
+	MovePkgID     = "0x63aeecd28b9bc9cf5476bac7a6ad3e62e5427c15f0a210335df271e75c89baa9"
+	GameDataObjID = "0x0a84bc3803250c79790245cf2c8ea8f74f9aa48efe5f40a30a205d9233cc5126"
 )
 
 type Room struct {
@@ -380,6 +379,7 @@ showdown:
 		Action: ActShowdown,
 		Room:   room,
 	})
+	log.Println("showdown end ", room.Id)
 	room.checkAndEndGame()
 }
 
@@ -613,6 +613,11 @@ func (room *Room) checkAndEndGame() {
 			})
 		}
 	}
+	log.Println("userSettles:", userSettles, playerCnt, hasChipUserCnt)
+	if len(userSettles) != 2 {
+		log.Println("num not match %d", len(userSettles))
+		return
+	}
 
 	// gameover
 	if playerCnt > 0 && hasChipUserCnt <= 1 {
@@ -620,8 +625,9 @@ func (room *Room) checkAndEndGame() {
 			o.Leave()
 			return true
 		})
+		log.Println("checkAndEndGame leave users")
 		// call contract endgame
-		cli := sui.NewSuiClient(constant.BvTestnetEndpoint)
+		cli := sui.NewSuiClient(constant.SuiTestnetEndpoint)
 		signerAccount, err := signer.NewSignertWithMnemonic(mnemonic)
 		if err != nil {
 			log.Panicln(err)
@@ -630,19 +636,24 @@ func (room *Room) checkAndEndGame() {
 			Signer:          signerAccount.Address,
 			PackageObjectId: MovePkgID,
 			Module:          "mental_poker",
-			Function:        "finish_game",
+			Function:        "end_game",
 			TypeArguments:   []interface{}{},
 			Arguments: []interface{}{
 				room.game.GameID,
 				GameDataObjID,
-				userSettles,
+				userSettles[0].Player,
+				strconv.Itoa(int(userSettles[0].ChipAmount)),
+				userSettles[1].Player,
+				strconv.Itoa(int(userSettles[1].ChipAmount)),
+				"proof", // todo proof
 			},
 			//Gas:       &gasObj,
 			GasBudget: "100000000",
 		})
 
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println(room.game.GameID, GameDataObjID)
+			log.Println("checkAndEndGame MoveCall", err.Error())
 			return
 		}
 		// see the successful transaction url: https://explorer.sui.io/txblock/CD5hFB4bWFThhb6FtvKq3xAxRri72vsYLJAVd7p9t2sR?network=testnet
@@ -657,9 +668,8 @@ func (room *Room) checkAndEndGame() {
 			},
 			RequestType: "WaitForLocalExecution",
 		})
-
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println("checkAndEndGame SignAndExecuteTransactionBlock", err.Error())
 			return
 		}
 		log.Println(rsp2)
@@ -667,14 +677,14 @@ func (room *Room) checkAndEndGame() {
 }
 
 type roomlist struct {
-	M       map[int]*Room
+	M       map[string]*Room
 	counter int
 	lock    sync.Mutex
 }
 
 func NewRoomList() *roomlist {
 	return &roomlist{
-		M:       make(map[int]*Room),
+		M:       make(map[string]*Room),
 		counter: 1000,
 		lock:    sync.Mutex{},
 	}
@@ -692,21 +702,20 @@ func SetRoom(room *Room) {
 }
 
 func setRoom(room *Room) {
-	id, _ := strconv.Atoi(room.Id)
-	if id == 0 {
-		rooms.counter++
-		id = rooms.counter
-		room.Id = strconv.Itoa(id)
-	}
-	rooms.M[id] = room
+	//id, _ := strconv.Atoi(room.Id)
+	//if id == 0 {
+	//	rooms.counter++
+	//	id = rooms.counter
+	//	room.Id = strconv.Itoa(id)
+	//}
+	rooms.M[room.Id] = room
 }
 
 func GetRoom(id string) *Room {
 	rooms.lock.Lock()
 	defer rooms.lock.Unlock()
 
-	nid, _ := strconv.Atoi(id)
-	room := rooms.M[nid]
+	room := rooms.M[id]
 	if room == nil {
 		for _, v := range rooms.M {
 			if v.N < v.Max {
@@ -752,8 +761,8 @@ func DelRoom(room *Room) {
 	rooms.lock.Lock()
 	defer rooms.lock.Unlock()
 
-	id, _ := strconv.Atoi(room.Id)
-	delete(rooms.M, id)
+	//id, _ := strconv.Atoi(room.Id)
+	delete(rooms.M, room.Id)
 	room.Id = ""
 }
 
@@ -763,12 +772,12 @@ func Rooms() (r []*Room) {
 
 	r = make([]*Room, 0, len(rooms.M))
 
-	ids := make([]int, 0, len(rooms.M))
+	ids := make([]string, 0, len(rooms.M))
 	for k := range rooms.M {
 		ids = append(ids, k)
 	}
 
-	sort.Sort(sort.Reverse(sort.IntSlice(ids)))
+	//sort.Sort(sort.Reverse(sort.IntSlice(ids)))
 	for _, id := range ids {
 		r = append(r, rooms.M[id])
 	}

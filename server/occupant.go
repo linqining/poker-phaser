@@ -206,7 +206,7 @@ func (o *Occupant) JoinRoom(room *Room, chips int) {
 	o.Pos = 0
 	o.Room = room
 	o.Chips = chips
-	log.Panicln("user join with  chips", o.Name, chips)
+	log.Println("user join with  chips", o.Name, chips)
 
 	player := mental_poker.NewPlayer(room.game)
 	player.Setup()

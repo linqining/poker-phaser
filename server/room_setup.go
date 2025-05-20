@@ -27,6 +27,9 @@ func (room *Room) setup() error {
 	players := []*mental_poker.Player{}
 
 	room.Each(0, func(o *Occupant) bool {
+		if o.player != nil {
+			o.player.Clear()
+		}
 		player := mental_poker.NewPlayer(room.game)
 		player.Setup()
 		players = append(players, player)

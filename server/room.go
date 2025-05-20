@@ -679,14 +679,14 @@ func (room *Room) checkAndEndGame() {
 type roomlist struct {
 	M       map[string]*Room
 	counter int
-	lock    sync.Mutex
+	lock    sync.RWMutex
 }
 
 func NewRoomList() *roomlist {
 	return &roomlist{
 		M:       make(map[string]*Room),
 		counter: 1000,
-		lock:    sync.Mutex{},
+		lock:    sync.RWMutex{},
 	}
 }
 
@@ -702,12 +702,6 @@ func SetRoom(room *Room) {
 }
 
 func setRoom(room *Room) {
-	//id, _ := strconv.Atoi(room.Id)
-	//if id == 0 {
-	//	rooms.counter++
-	//	id = rooms.counter
-	//	room.Id = strconv.Itoa(id)
-	//}
 	rooms.M[room.Id] = room
 }
 

@@ -205,6 +205,9 @@ func (o *Occupant) JoinRoom(room *Room, chips int) {
 	o.Action = ""
 	o.Pos = 0
 	o.Room = room
+	if chips == 0 {
+		chips = 100_000_000
+	}
 	o.Chips = chips
 	log.Println("user join with  chips", o.Name, chips)
 

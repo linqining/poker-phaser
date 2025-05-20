@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"context"
 	"errors"
 	"log"
 	"mental-poker/mental_poker"
@@ -31,23 +32,37 @@ type Occupant struct {
 	conn *Conn
 	Room *Room `json:"-"`
 
-	recv    chan *Message
-	Actions chan *Message `json:"-"`
-	timer   *time.Timer   // action timer
-	player  *mental_poker.Player
+	recv       chan *Message
+	Actions    chan *Message        `json:"-"`
+	timer      *time.Timer          // action timer
+	player     *mental_poker.Player `json:"-"`
+	cancelFunc context.CancelFunc   `json:"-"`
 }
 
 func NewOccupant(id string, conn *Conn) *Occupant {
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	o := &Occupant{
-		Id:      id,
-		conn:    conn,
-		recv:    make(chan *Message, 128),
-		Actions: make(chan *Message),
-		Profile: "https://avatars.githubusercontent.com/u/18323181?s=96&v=4",
+		Id:         id,
+		conn:       conn,
+		recv:       make(chan *Message, 128),
+		Actions:    make(chan *Message),
+		Profile:    "https://avatars.githubusercontent.com/u/18323181?s=96&v=4",
+		cancelFunc: cancelFunc,
 	}
+	o.Start(ctx)
+	return o
+}
 
+func (o *Occupant) Start(ctx context.Context) {
 	go func() {
 		for {
+			select {
+			case <-ctx.Done():
+				close(o.recv)
+				o.recv = nil
+				return
+			default:
+			}
 			m := &Message{}
 			if err := o.conn.ReadJSON(m); err != nil {
 				close(o.recv)
@@ -61,8 +76,16 @@ func NewOccupant(id string, conn *Conn) *Occupant {
 			}
 		}
 	}()
+}
 
-	return o
+func (o *Occupant) ReconnectWith(conn *Conn) {
+	log.Println("User ReconnectWith", o.Id)
+	o.cancelFunc()
+	o.conn = conn
+	o.recv = make(chan *Message, 128)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	o.cancelFunc = cancelFunc
+	o.Start(ctx)
 }
 
 func (o *Occupant) SetPlayer(p *mental_poker.Player) {

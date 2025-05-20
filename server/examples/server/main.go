@@ -37,8 +37,13 @@ func onAuth(conn *poker.Conn, mechanism, text string) (*poker.Occupant, error) {
 	if text != "" {
 		id = text
 	}
-	o := poker.NewOccupant(id, conn)
-	o.Name = id
+	o := poker.GetOccupantByAddress(id)
+	if o != nil {
+		o.ReconnectWith(conn)
+		return o, nil
+	}
 
+	o = poker.NewOccupant(id, conn)
+	o.Name = id
 	return o, nil
 }

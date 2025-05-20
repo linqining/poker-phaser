@@ -107,7 +107,8 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	o.Leave()
+	// Do not leave wait reconnect
+	//o.Leave()
 
 	if p.OnExit != nil {
 		p.OnExit(o)

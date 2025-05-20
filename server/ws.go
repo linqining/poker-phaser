@@ -23,12 +23,13 @@ const (
 	ActShowdown = "showdown"
 	ActPot      = "pot"
 
-	ActActive = "active"
-	ActJoin   = "join"
-	ActLeave  = "gone"
-	ActBet    = "bet"
-	ActButton = "button"
-	ActState  = "state"
+	ActActive    = "active"
+	ActJoin      = "join"
+	ActReconnect = "reconnect"
+	ActLeave     = "gone"
+	ActBet       = "bet"
+	ActButton    = "button"
+	ActState     = "state"
 
 	ActAction = "action"
 	ActReady  = "ready"
@@ -104,10 +105,19 @@ func handlePresence(o *Occupant, message *Message) {
 			log.Panic("room not found", message.To)
 		}
 		o.JoinRoom(room, message.Chips)
-		//if room := o.Join(message.To); room == nil {
-		//	o.SendError(1, "room not found")
-		//	return
-		//}
+	//if room := o.Join(message.To); room == nil {
+	//	o.SendError(1, "room not found")
+	//	return
+	//}
+	case ActReconnect:
+		if !RoomExist(message.To) {
+			return
+		}
+		room := GetRoom(message.To)
+		if room == nil {
+			log.Panic("room not found", message.To)
+		}
+		o.JoinRoom(room, message.Chips)
 	case ActLeave:
 		o.Leave()
 	case ActBet:

@@ -724,6 +724,14 @@ func GetRoom(id string) *Room {
 	return room
 }
 
+func RoomExist(id string) bool {
+	rooms.lock.Lock()
+	defer rooms.lock.Unlock()
+
+	_, ok := rooms.M[id]
+	return ok
+}
+
 func GetOrCreateRoom(id string) *Room {
 	if room := GetRoom(id); room != nil {
 		return room

@@ -1,7 +1,6 @@
 package poker
 
 import (
-	"log"
 	"mental-poker/mental_poker"
 )
 
@@ -29,7 +28,7 @@ func (m MaskedCard) ToCard() Card {
 	case "Diamond":
 		suit = Diamond
 	default:
-		log.Println("Classic Card:", m.ClassicCard)
+		//log.Println("Classic Card:", m.ClassicCard)
 		panic(m.ClassicCard.Suite)
 	}
 

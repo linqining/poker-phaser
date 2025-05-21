@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -81,7 +80,7 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 	if p.OnAuth != nil {
 		o, err = p.OnAuth(conn, auth.Mechanism, auth.Text)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			o = NewOccupant(strconv.FormatInt(time.Now().Unix(), 10), conn)
 			o.Name = auth.Text
 		}
@@ -113,5 +112,5 @@ func (p *Poker) pokerHandler(w http.ResponseWriter, r *http.Request) {
 	if p.OnExit != nil {
 		p.OnExit(o)
 	}
-	log.Println(o.Name, "disconnected.")
+	//log.Println(o.Name, "disconnected.")
 }

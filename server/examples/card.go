@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	poker "mental-poker/server"
 )
 
@@ -26,7 +25,8 @@ func main() {
 			cards[i] = card
 		}
 		hand := poker.Eva5Hand(cards)
-		fmt.Println(hand)
+		_ = hand
+		//fmt.Println(hand)
 	}
 
 	if len(args) == 7 {
@@ -38,6 +38,6 @@ func main() {
 			}
 			cards[i] = card
 		}
-		fmt.Println(poker.Eva7Hand(cards))
+		//fmt.Println(poker.Eva7Hand(cards))
 	}
 }

@@ -116,7 +116,7 @@ func (room *Room) AddOccupant(o *Occupant) int {
 		if room.Occupants[pos] == nil {
 			room.Occupants[pos] = o
 			room.N++
-			log.Println(room.N)
+			//log.Println(room.N)
 			o.Room = room
 			o.Pos = pos + 1
 			break
@@ -235,7 +235,7 @@ func (room *Room) start() {
 		o.Bet = 0
 		cards, err := room.DealCard(o, 2)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 		}
 		o.Cards = cards
 		o.Hand = 0
@@ -291,10 +291,7 @@ func (room *Room) start() {
 			cards := hand[0:0]
 			//cards = append(cards, o.RevealCards...) // todo handle reveal cards
 			cards = append(cards, o.Cards...) //TODO this action handle by user not by server
-			log.Println(o.player.GameUserID, cards)
 			cards = append(cards, room.Cards...)
-			log.Println(o.player.GameUserID, hand)
-			log.Println(o.player.GameUserID, cards)
 			o.Hand = Eva5Hand(hand)
 		}
 		o.SendMessage(&Message{
@@ -379,7 +376,7 @@ showdown:
 		Action: ActShowdown,
 		Room:   room,
 	})
-	log.Println("showdown end ", room.Id)
+	//log.Println("showdown end ", room.Id)
 	room.checkAndEndGame()
 }
 
@@ -526,7 +523,7 @@ func (room *Room) showdown() {
 		}
 
 		if len(winners) == 0 {
-			fmt.Println("!!!no winners!!!")
+			//fmt.Println("!!!no winners!!!")
 			return
 		}
 
@@ -613,9 +610,9 @@ func (room *Room) checkAndEndGame() {
 			})
 		}
 	}
-	log.Println("userSettles:", userSettles, playerCnt, hasChipUserCnt)
+	//log.Println("userSettles:", userSettles, playerCnt, hasChipUserCnt)
 	if len(userSettles) != 2 {
-		log.Println("num not match %d", len(userSettles))
+		//log.Println("num not match %d", len(userSettles))
 		return
 	}
 
@@ -625,7 +622,7 @@ func (room *Room) checkAndEndGame() {
 			o.Leave()
 			return true
 		})
-		log.Println("checkAndEndGame leave users")
+		//log.Println("checkAndEndGame leave users")
 		// call contract endgame
 		cli := sui.NewSuiClient(constant.SuiTestnetEndpoint)
 		signerAccount, err := signer.NewSignertWithMnemonic(mnemonic)
@@ -652,8 +649,8 @@ func (room *Room) checkAndEndGame() {
 		})
 
 		if err != nil {
-			log.Println(room.game.GameID, GameDataObjID)
-			log.Println("checkAndEndGame MoveCall", err.Error())
+			//log.Println(room.game.GameID, GameDataObjID)
+			//log.Println("checkAndEndGame MoveCall", err.Error())
 			return
 		}
 		// see the successful transaction url: https://explorer.sui.io/txblock/CD5hFB4bWFThhb6FtvKq3xAxRri72vsYLJAVd7p9t2sR?network=testnet
@@ -669,7 +666,7 @@ func (room *Room) checkAndEndGame() {
 			RequestType: "WaitForLocalExecution",
 		})
 		if err != nil {
-			log.Println("checkAndEndGame SignAndExecuteTransactionBlock", err.Error())
+			//log.Println("checkAndEndGame SignAndExecuteTransactionBlock", err.Error())
 			return
 		}
 		log.Println(rsp2)

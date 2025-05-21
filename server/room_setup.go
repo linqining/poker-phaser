@@ -1,7 +1,6 @@
 package poker
 
 import (
-	"log"
 	"mental-poker/mental_poker"
 )
 
@@ -54,7 +53,7 @@ func (room *Room) setup() error {
 	if err != nil {
 		return err
 	}
-	log.Println(maskResp)
+	//log.Println(maskResp)
 	cards := []string{}
 	for _, card := range maskResp.Cards {
 		cards = append(cards, card.MaskedCard)
@@ -65,13 +64,13 @@ func (room *Room) setup() error {
 	for _, player := range players {
 		shuffleResp, err := player.Shuffle(originCards)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			return err
 		}
 		for _, p := range players {
 			_, verifyShuffleErr := p.VerifyShuffle(originCards, shuffleResp.Cards, shuffleResp.ShuffleProof)
 			if verifyShuffleErr != nil {
-				log.Println(verifyShuffleErr)
+				//log.Println(verifyShuffleErr)
 				return verifyShuffleErr
 			}
 		}
@@ -79,7 +78,8 @@ func (room *Room) setup() error {
 		finalCards = shuffleResp.Cards
 		finalProof = shuffleResp.ShuffleProof
 	}
-	log.Println("shuffle complete", finalProof, finalCards)
+	_ = finalProof
+	//log.Println("shuffle complete", finalProof, finalCards)
 	room.game.SetShuffleCards(finalCards)
 	room.maskedDeck = NewDeckMasked(room.game.InitialCards, room.game.ShuffleCards)
 	return nil

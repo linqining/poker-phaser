@@ -3,10 +3,8 @@ package poker
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
-	"log"
 	"time"
 )
 
@@ -69,7 +67,7 @@ func (c *Conn) readJson(v interface{}) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(">>>", time.Now().Format("15:04:05"), string(b))
+	//fmt.Println(">>>", time.Now().Format("15:04:05"), string(b))
 
 	return json.Unmarshal(b, v)
 }
@@ -84,7 +82,7 @@ func (c *Conn) WriteJSON(v interface{}) error {
 	case c.send <- b:
 		return nil
 	default:
-		fmt.Println("buffer full")
+		//fmt.Println("buffer full")
 		return errors.New("buffer full")
 	}
 }
@@ -111,11 +109,11 @@ func (c *Conn) writePump() {
 			}
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.write(websocket.TextMessage, message); err != nil {
-				log.Println(err)
+				//log.Println(err)
 				return
 			}
 
-			fmt.Println("<<<", time.Now().Format("15:04:05"), string(message))
+			//fmt.Println("<<<", time.Now().Format("15:04:05"), string(message))
 		case <-ticker.C:
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.write(websocket.PingMessage, []byte{}); err != nil {

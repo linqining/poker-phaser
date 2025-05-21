@@ -3,14 +3,24 @@ package mental_poker
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/ecodeclub/ekit/slice"
+	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"github.com/mozillazg/request"
 	"io"
 	"log"
 	"net/http"
 )
+
+// 实例化一个新的color对象，设置前景色为红色，背景色为绿色，文字斜体
+var colorPrint *color.Color
+
+func init() {
+	colorPrint = color.New()
+	colorPrint.Add(color.FgRed) // 设置前景色为红色
+	//colorPrint.Add(color.Italic)  // 设置文字为斜体
+	colorPrint.Add(color.BgCyan) // 设置背景色为绿色
+}
 
 type UserKeyProof struct {
 	Commit  string `json:"commit"`
@@ -72,7 +82,8 @@ func InitializeDeck() (*InitializeDeckResp, error) {
 	}
 	bytes.NewReader([]byte{})
 	data, err := io.ReadAll(resp.Body)
-	log.Println("SetUp initial public parameters:", string(data))
+	colorPrint.Println("SetUp initial public parameters:")
+	log.Println(string(data))
 	ret := &InitializeDeckResp{}
 	err = json.Unmarshal(data, ret)
 	if err != nil {
@@ -118,7 +129,9 @@ func (p *Player) Setup() (*SetUpResponse, error) {
 	}
 
 	data, _ := io.ReadAll(resp.Body)
-	log.Println("Player setUp publicKey and provide publicKey proof:", string(data))
+
+	colorPrint.Println("Player %s setUp publicKey and provide publicKey proof:", p.GameUserID)
+	log.Println(string(data))
 	setUpResponse := new(SetUpResponse)
 	err = json.Unmarshal(data, setUpResponse)
 	if err != nil {
@@ -158,7 +171,9 @@ func (p *Player) ComputeAggregatekey(players []*AggPlayer) (*ComputeAggKeyResp, 
 	if err != nil {
 		return nil, err
 	}
-	log.Println("HomomorphicEncryption setup initial public parameters:", string(data))
+
+	colorPrint.Println("HomomorphicEncryption setup initial public parameters:")
+	log.Println(string(data))
 	aggResponse := new(ComputeAggKeyResp)
 	err = json.Unmarshal(data, aggResponse)
 	if err != nil {
@@ -197,7 +212,8 @@ func (p *Player) Mask() (*MaskResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Mask the card before each player shuffle:", string(data))
+	colorPrint.Println("Mask the card before each player shuffle:")
+	log.Println(string(data))
 	maskResp := new(MaskResponse)
 	err = json.Unmarshal(data, maskResp)
 	if err != nil {
@@ -227,8 +243,8 @@ func (p *Player) Shuffle(cards []string) (*ShuffleResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(fmt.Sprintf("Player %s shuffle the deck and provide proof:", p.GameUserID), string(data))
-
+	colorPrint.Println("Player %s shuffle the deck and provide proof:", p.GameUserID)
+	log.Println(string(data))
 	shuffleResp := new(ShuffleResponse)
 	err = json.Unmarshal(data, shuffleResp)
 	if err != nil {
@@ -258,7 +274,8 @@ func (p *Player) VerifyShuffle(originCards []string, shuffledCards []string, shu
 	if err != nil {
 		return nil, err
 	}
-	log.Println(fmt.Sprintf("Player %s verify the shuffle proof:", p.GameUserID), string(data))
+	colorPrint.Println("Player %s verify the shuffle proof:", p.GameUserID)
+	log.Println(string(data))
 	shuffleResp := new(VerifyShuffleResponse)
 	err = json.Unmarshal(data, shuffleResp)
 	if err != nil {
@@ -299,7 +316,9 @@ func (p *Player) ComputeRevealToken(cards []string) (*RevealTokenResponse, error
 	if err != nil {
 		return nil, err
 	}
-	log.Println(fmt.Sprintf("Player %s compute reveal token for other player:", p.GameUserID), string(data))
+
+	colorPrint.Println("Player %s compute reveal token for other player:", p.GameUserID)
+	log.Println(string(data))
 	shuffleResp := new(RevealTokenResponse)
 	err = json.Unmarshal(data, shuffleResp)
 	if err != nil {
@@ -328,7 +347,8 @@ func (p *Player) PeekCards(receiveCards []ReceiveCard) (*PeekCardsResponse, erro
 	if err != nil {
 		return nil, err
 	}
-	log.Println(fmt.Sprintf("Player %s peek his card:", p.GameUserID), string(data))
+	colorPrint.Println("Player %s peek his card:", p.GameUserID)
+	log.Println(string(data))
 	shuffleResp := new(PeekCardsResponse)
 	err = json.Unmarshal(data, shuffleResp)
 	if err != nil {
@@ -358,6 +378,9 @@ func (p *Player) Clear() error {
 		return err
 	}
 	data, _ := io.ReadAll(resp.Body)
-	log.Println("Game over clear user data:", string(data))
+
+	colorPrint.Println("Game over clear player %s data:")
+	log.Println(string(data))
+
 	return nil
 }

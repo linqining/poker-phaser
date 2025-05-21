@@ -3,7 +3,6 @@ package poker
 import (
 	"context"
 	"errors"
-	"log"
 	"mental-poker/mental_poker"
 
 	//"strconv"
@@ -72,14 +71,14 @@ func (o *Occupant) Start(ctx context.Context) {
 			select {
 			case o.recv <- m:
 			default:
-				log.Println("dropped")
+				//log.Println("dropped")
 			}
 		}
 	}()
 }
 
 func (o *Occupant) ReconnectWith(conn *Conn) {
-	log.Println("User ReconnectWith", o.Id)
+	//log.Println("User ReconnectWith", o.Id)
 	o.cancelFunc()
 	o.conn = conn
 	o.recv = make(chan *Message, 128)
@@ -232,7 +231,7 @@ func (o *Occupant) JoinRoom(room *Room, chips int) {
 		chips = 100_000_000
 	}
 	o.Chips = chips
-	log.Println("user join with  chips", o.Name, chips)
+	//log.Println("user join with  chips", o.Name, chips)
 
 	player := mental_poker.NewPlayer(room.game)
 	player.Setup()

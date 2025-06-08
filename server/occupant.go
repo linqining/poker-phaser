@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"mental-poker/mental_poker"
+	"sync/atomic"
 
 	//"strconv"
 	"time"
@@ -36,6 +37,7 @@ type Occupant struct {
 	timer      *time.Timer          // action timer
 	player     *mental_poker.Player `json:"-"`
 	cancelFunc context.CancelFunc   `json:"-"`
+	stopped    *atomic.Bool         `json:"-"`
 }
 
 func NewOccupant(id string, conn *Conn) *Occupant {
@@ -47,9 +49,18 @@ func NewOccupant(id string, conn *Conn) *Occupant {
 		Actions:    make(chan *Message),
 		Profile:    "https://avatars.githubusercontent.com/u/18323181?s=96&v=4",
 		cancelFunc: cancelFunc,
+		stopped:    &atomic.Bool{},
 	}
 	o.Start(ctx)
 	return o
+}
+
+func (o *Occupant) stop() {
+	swapped := o.stopped.CompareAndSwap(false, true)
+	if swapped {
+		close(o.recv)
+		o.recv = nil
+	}
 }
 
 func (o *Occupant) Start(ctx context.Context) {
@@ -57,15 +68,13 @@ func (o *Occupant) Start(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				close(o.recv)
-				o.recv = nil
+				o.stop()
 				return
 			default:
 			}
 			m := &Message{}
 			if err := o.conn.ReadJSON(m); err != nil {
-				close(o.recv)
-				o.recv = nil
+				o.stop()
 				return
 			}
 			select {

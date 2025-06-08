@@ -259,11 +259,15 @@ func (room *Room) start() {
 
 	// Round 1 : preflop
 	room.Each(sb.Pos-1, func(o *Occupant) bool {
+		class := ""
+		if len(o.Cards) > 0 {
+			class = o.Cards[0].String() + "," + o.Cards[1].String()
+		}
 		o.SendMessage(&Message{
 			From:   room.Id,
 			Type:   MsgPresence,
 			Action: ActPreflop,
-			Class:  o.Cards[0].String() + "," + o.Cards[1].String(),
+			Class:  class, // todo 为什么空
 		})
 		return true
 	})
